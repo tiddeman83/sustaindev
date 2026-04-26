@@ -1,0 +1,47 @@
+<!--
+SustainDev Codex adapter template.
+
+Target tool: OpenAI Codex CLI.
+Install: cp adapters/codex/AGENTS.md.template <project>/AGENTS.md, then replace the placeholders below.
+
+Referenced core files:
+- core/principles/development-principles.md
+- core/rules/token-efficiency.md
+- core/rules/maintainability.md
+- core/rules/model-routing.md
+- core/skills/idea-to-prepared-task/SKILL.md
+-->
+
+# AGENTS.md
+
+## Project Identity
+
+Project name: <project-name>
+
+<one-paragraph-purpose-of-this-project>
+
+## Read Before Acting
+
+- Read `core/principles/development-principles.md` for the shared development principles used by all tools.
+- Read `core/rules/token-efficiency.md` before broad exploration or repository scanning.
+- Read `core/rules/maintainability.md` before planning or making code changes.
+- Read `core/rules/model-routing.md` before deciding whether work belongs to a local model, cloud model, or human.
+- Read `PROJECT_CONTEXT.md` for the project-specific architecture, stack, and constraints.
+- Read `CODEMAP.md` before searching the repository for relevant files.
+- Read `VERIFY.md` before implementing so verification commands are known upfront.
+
+## Verification Commands
+
+Use `VERIFY.md` as the source of truth for lint, test, build, and manual verification commands. If a command is missing or stale, update `VERIFY.md` as part of the change.
+
+## AI Policy
+
+Use `AI_POLICY.md` for project-specific boundaries: safe commands, forbidden operations, data handling rules, and when to stop for human review.
+
+## Maintainability Constraints
+
+Use `MAINTAINABILITY_NOTES.md` to identify the project-specific risks around architecture fit, coupling, naming, testability, error handling, and change cost.
+
+## Skills Available
+
+Codex consumes the same tool-neutral workflows as other adapters through `core/skills/`. For v0.1, the relevant workflow is `core/skills/idea-to-prepared-task/SKILL.md`, which turns a captured idea into a prepared task brief before cloud-model implementation.
