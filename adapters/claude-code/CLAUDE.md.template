@@ -1,0 +1,55 @@
+<!--
+Target tool:  Claude Code
+What it is:   Template for a project-level CLAUDE.md file that Claude Code reads at session start.
+How to install:
+  1. cp adapters/claude-code/CLAUDE.md.template <project>/CLAUDE.md
+  2. Fill in every <placeholder> — takes under 5 minutes for a project with a complete PROJECT_CONTEXT.md.
+  3. Commit the filled-in CLAUDE.md to the project root.
+Core files referenced:
+  - core/principles/development-principles.md
+  - core/rules/token-efficiency.md
+  - core/rules/maintainability.md
+  - core/rules/model-routing.md
+  - core/skills/idea-to-prepared-task/SKILL.md
+-->
+
+# <project-name>
+
+<One-line description of what this project is and who uses it.>
+
+<One paragraph expanding on the project's purpose, the problem it solves, and any constraints
+that are not obvious from the name alone. Keep it to three to five sentences.>
+
+## Read Before Acting
+
+Read these files in order before making any change. They are the minimum context for acting
+correctly in this project.
+
+- `core/principles/development-principles.md` — development principles that apply to all projects.
+- `core/rules/token-efficiency.md` — token discipline rules; apply them to every model turn.
+- `core/rules/maintainability.md` — the six maintainability dimensions; required for every code change.
+- `core/rules/model-routing.md` — routing decisions between local and cloud model tiers.
+- `<project>/PROJECT_CONTEXT.md` — compact, durable context for this project specifically.
+- `<project>/CODEMAP.md` — file and module map; use it to locate code before scanning the repo.
+- `<project>/VERIFY.md` — verification commands; run these after every change.
+
+## Verification Commands
+
+Verification commands are in `<project>/VERIFY.md`. Run the full sequence after every code change
+before reporting the task complete.
+
+## AI Policy
+
+Actions permitted and restricted for AI tools working in this project are in `<project>/AI_POLICY.md`.
+Read it before taking any action that writes files, runs commands, or calls external services.
+
+## Maintainability Constraints
+
+Project-specific maintainability rules that extend the core six dimensions are in
+`<project>/MAINTAINABILITY_NOTES.md`. The core dimensions in `core/rules/maintainability.md`
+still apply; project notes add constraints on top.
+
+## Skills Available
+
+- `core/skills/idea-to-prepared-task/SKILL.md` — captures a vague idea and produces a structured
+  task brief queued for execution at a chosen time. The hero skill for v0.1.
