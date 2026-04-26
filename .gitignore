@@ -1,0 +1,69 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Tool-local config (should not be committed)
+.claude/
+.codex/
+.aider*
+.continue/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Local model output cache
+.lmstudio/
+.local-model-cache/
+*.lmcache
+
+# Private project mappings (never commit)
+projects/.private-map.md
+projects/**/.private/
+
+# Scheduling queue runtime artifacts (gitkeeps remain tracked)
+core/scheduling/queue/captured/*
+core/scheduling/queue/prework-ready/*
+core/scheduling/queue/scheduled/*
+core/scheduling/queue/completed/*
+!core/scheduling/queue/**/.gitkeep
+!core/scheduling/queue/**/EXAMPLE-*.md
+
+# Build artifacts
+dist/
+build/
+out/
+*.log
+
+# Coverage
+coverage/
+.coverage
+htmlcov/

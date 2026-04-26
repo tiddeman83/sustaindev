@@ -1,0 +1,119 @@
+name: validate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  required-files:
+    name: Required files exist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check required top-level files
+        run: |
+          set -e
+          required=(
+            "README.md"
+            "LICENSE"
+            "CONTRIBUTING.md"
+            "CODE_OF_CONDUCT.md"
+            "build_plan.md"
+            "revised_sprints_v0.1.md"
+            ".gitignore"
+            "docs/positioning.md"
+            "docs/roadmap.md"
+            "docs/sustainability-defined.md"
+            ".github/ISSUE_TEMPLATE/skill_request.md"
+            ".github/ISSUE_TEMPLATE/adapter_request.md"
+            ".github/ISSUE_TEMPLATE/measurement_report.md"
+          )
+          missing=0
+          for f in "${required[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "MISSING: $f"
+              missing=$((missing+1))
+            fi
+          done
+          if [ "$missing" -gt 0 ]; then
+            echo "::error::$missing required file(s) missing"
+            exit 1
+          fi
+          echo "All required files present."
+
+  link-check:
+    name: Markdown link check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run lychee link checker
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --no-progress
+            --exclude-path .git
+            --exclude '^https?://github\.com/<username>'
+            --exclude '^https?://localhost'
+            --accept 200,206,429
+            './**/*.md'
+          fail: true
+
+  no-private-names:
+    name: No private project names in public files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan for sanitized-only project names
+        run: |
+          set -e
+          # The forbidden-names list is intentionally read from a separate file
+          # so this workflow file does not match itself.
+          # File path: .github/forbidden-names.txt (one name per line, # for comments)
+          if [ ! -f .github/forbidden-names.txt ]; then
+            echo "No forbidden-names list configured (skipping)."
+            exit 0
+          fi
+          fail=0
+          while IFS= read -r name; do
+            # Skip comments and blank lines.
+            case "$name" in
+              ''|\#*) continue ;;
+            esac
+            # Exclude the forbidden-names list itself from the search.
+            matches=$(git ls-files | grep -v '^\.github/forbidden-names\.txt$' | xargs grep -l "$name" 2>/dev/null || true)
+            if [ -n "$matches" ]; then
+              echo "::error::Forbidden private name '$name' appears in tracked files:"
+              echo "$matches"
+              fail=1
+            fi
+          done < .github/forbidden-names.txt
+          if [ "$fail" -eq 1 ]; then
+            exit 1
+          fi
+          echo "No private project names found in tracked files."
+
+  skill-schema-stub:
+    name: Skill schema check (stub)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check SKILL.md files have required headings
+        run: |
+          set -e
+          # Stub check: if any SKILL.md exists, verify it contains the required sections.
+          # Will become stricter in v0.2 once the skill format stabilizes.
+          if ls core/skills/*/SKILL.md 2>/dev/null; then
+            for f in core/skills/*/SKILL.md; do
+              for heading in "## Trigger" "## Workflow" "## Output" "## Verification"; do
+                if ! grep -q "^$heading" "$f"; then
+                  echo "::error::$f is missing heading: $heading"
+                  exit 1
+                fi
+              done
+              echo "OK: $f"
+            done
+          else
+            echo "No SKILL.md files yet (expected before Sprint 1)."
+          fi

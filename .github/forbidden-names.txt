@@ -1,0 +1,7 @@
+# Names that must not appear in tracked files.
+# CI fails if any of these are found in a public file.
+# This list itself is excluded from the scan.
+# Add one name per line. Lines starting with # are comments.
+
+Schoolanalyse
+bloonbladmaker
