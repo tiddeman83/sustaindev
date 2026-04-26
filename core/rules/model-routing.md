@@ -47,14 +47,14 @@ ALWAYS require human review when:
 | Codemap drafts from file lists | Strong | Pattern extraction; benefits from large context window. | Theoretical; not yet measured. |
 | Summarization of long documents | Strong | Plays to 262k context window; output is bounded. | Theoretical; not yet measured. |
 | Risk extraction from existing prose | Strong | Pattern-matching task; structure matters more than prose quality. | Theoretical; not yet measured. |
-| Idea expansion: rough capture → structured task brief | Strong | Hero-workflow centerpiece; latency is acceptable because user has walked away. | Theoretical; not yet measured. |
+| Idea expansion: rough capture → structured task brief | Strong | Hero-workflow centerpiece; structured output from rich context. | Measured in `docs/measurement/case-study-03.md`. |
 | Batch / overnight prework | Strong | Wall-clock cost is zero. | Theoretical; not yet measured. |
 | Full-document drafting from rich brief | Weak | Reasoning overhead + wall-clock cost outweighs cloud savings. | Measured in `docs/measurement/case-study-01.md`. |
 | Adapter templates | Weak | Requires accurate tool-specific knowledge that 9B class models get wrong. | Theoretical; not yet measured. |
 | Cross-document consistency checks | Weak | Wall-clock penalty too high for active sessions. | Theoretical; not yet measured. |
 | Time-critical authoring | Weak | User is waiting; latency is unacceptable. | Implicit from case-study-01. |
 
-The "Theoretical; not yet measured" entries are honest acknowledgements. Only one task class was empirically tested in v0.1. The remaining measurements land in v0.2.
+The "Theoretical; not yet measured" entries are honest acknowledgements. Two task classes are now empirically tested (full-document drafting in case-study-01, idea expansion in case-study-03); the remaining strong-fit rows are v0.2 measurement targets.
 
 ## Hardware Tiers
 

@@ -23,7 +23,27 @@ Lead choice: **Qwen 3.5 9B at MLX 4-bit quantization**, for Apple Silicon at 16�
 
 ## Configuration
 
-Set the temperature to 0.3 for more deterministic output. Set the context length to a value comfortable for your hardware; the Qwen model supports up to 262k natively, but 32k is a comfortable cap for 16 GB systems without memory swapping. For Qwen 3.x models, include `/no_think` in the system prompt to suppress reasoning overhead on tasks that don't benefit from chain-of-thought.
+Set the temperature to 0.3 for more deterministic output. For Qwen 3.x models, include `/no_think` in the system prompt to suppress reasoning overhead on tasks that don't benefit from chain-of-thought.
+
+### Context length: minimum 16,384 (16k) for SustainDev
+
+LM Studio's default context length is 4,096 tokens. **This is too small for any project that takes the SustainDev project layer seriously.** A typical project layer (`PROJECT_CONTEXT.md`, `CODEMAP.md`, `AI_POLICY.md`, `MAINTAINABILITY_NOTES.md`, `VERIFY.md`) totals ~3,300 tokens; the structural prompt the prepare-task script wraps around it adds ~2,000 more; the captured stub adds ~100; output budget reserves ~4,000. Total: ~9,400 tokens before any reasoning overhead.
+
+Recommended minimums per use case:
+
+- **`prepare-task.py` brief generation:** 16,384 (16k). Safe for a typical project layer + a 4,000-token output budget. Validated empirically in `docs/measurement/case-study-03.md`.
+- **Idea triage / classification:** 8,192 (8k). Tasks with tiny outputs.
+- **Summarizing long source documents:** 32,768 (32k) or higher, depending on the document size.
+
+To change the context length:
+
+1. Open LM Studio → **My Models**.
+2. Click the gear icon next to your model (or right-click → Edit Settings).
+3. Find **Context Length** (or **n_ctx** in some versions).
+4. Set the new value (e.g., 16384).
+5. **Reload the model.** The slider alone does not take effect; the model must be unloaded and reloaded for the new context length to apply.
+
+Confirm the change worked by trying a script that previously failed with `n_keep: X >= n_ctx: 4096`. If it still fails, the model didn't fully reload.
 
 ## What This Adapter Is Good For
 
