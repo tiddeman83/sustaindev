@@ -43,7 +43,7 @@ ALWAYS require human review when:
 
 | Task class | Fit | Why | Evidence |
 |---|---|---|---|
-| Idea triage / classification | Strong | Tiny output, fast inference, real cloud savings at scale. | Theoretical; not yet measured. |
+| Idea triage / classification | Conditionally strong | Fast (3.4 s/file), zero hallucinations on 80-row output, ~89% strict accuracy. Needs rich context (RISKS.md + MAINTAINABILITY_NOTES) and human spot-check on edge cases. | Measured in `docs/measurement/case-study-04.md`. |
 | Codemap drafts from file lists | Strong | Pattern extraction; benefits from large context window. | Theoretical; not yet measured. |
 | Summarization of long documents | Strong | Plays to 262k context window; output is bounded. | Theoretical; not yet measured. |
 | Risk extraction from existing prose | Strong | Pattern-matching task; structure matters more than prose quality. | Theoretical; not yet measured. |
@@ -54,7 +54,7 @@ ALWAYS require human review when:
 | Cross-document consistency checks | Weak | Wall-clock penalty too high for active sessions. | Theoretical; not yet measured. |
 | Time-critical authoring | Weak | User is waiting; latency is unacceptable. | Implicit from case-study-01. |
 
-The "Theoretical; not yet measured" entries are honest acknowledgements. Two task classes are now empirically tested (full-document drafting in case-study-01, idea expansion in case-study-03); the remaining strong-fit rows are v0.2 measurement targets.
+The "Theoretical; not yet measured" entries are honest acknowledgements. Three task classes are now empirically tested (full-document drafting in case-study-01, idea expansion in case-study-03, idea triage in case-study-04); the remaining strong-fit rows are v0.2 measurement targets.
 
 ## Hardware Tiers
 
