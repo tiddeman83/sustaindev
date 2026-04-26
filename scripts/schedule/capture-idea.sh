@@ -7,11 +7,14 @@ set -eu
 usage() {
   cat <<'EOF'
 Usage:
-  scripts/schedule/capture-idea.sh [--priority low|medium|high] "idea title"
-  scripts/schedule/capture-idea.sh --help
+  capture-idea.sh [--priority low|medium|high] [--queue-root PATH] "idea title"
+  capture-idea.sh --help
 
 Arguments:
   --priority VALUE   Optional priority: low, medium, or high. Defaults to medium.
+  --queue-root PATH  Override queue root. Default: auto-detect by trying
+                     .sustaindev/queue then core/scheduling/queue in the
+                     current working directory.
   idea title         The rough idea to capture.
 
 Exit codes:
@@ -19,6 +22,9 @@ Exit codes:
   2  No title was given or arguments are invalid.
   3  Queue directory is missing.
   4  Title produced an empty slug.
+
+The script can be invoked from any path; queue auto-detection runs against
+the current working directory. Use --queue-root to override explicitly.
 EOF
 }
 
@@ -30,6 +36,7 @@ die() {
 }
 
 priority="medium"
+queue_root=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -44,6 +51,15 @@ while [ "$#" -gt 0 ]; do
       ;;
     --priority=*)
       priority=${1#--priority=}
+      shift
+      ;;
+    --queue-root)
+      [ "$#" -ge 2 ] || die 2 "ERROR: --queue-root requires a path."
+      queue_root="$2"
+      shift 2
+      ;;
+    --queue-root=*)
+      queue_root=${1#--queue-root=}
       shift
       ;;
     --*)
@@ -68,8 +84,17 @@ esac
 title="$*"
 [ -n "$title" ] || die 2 "ERROR: no title given."
 
-queue_dir="core/scheduling/queue/captured"
-[ -d "$queue_dir" ] || die 3 "ERROR: missing queue directory '$queue_dir'. Check the repository layout."
+# Resolve queue root: explicit override, or auto-detect by trying common roots.
+if [ -n "$queue_root" ]; then
+  queue_dir="$queue_root/captured"
+elif [ -d ".sustaindev/queue/captured" ]; then
+  queue_dir=".sustaindev/queue/captured"
+elif [ -d "core/scheduling/queue/captured" ]; then
+  queue_dir="core/scheduling/queue/captured"
+else
+  die 3 "ERROR: no queue root found. Tried .sustaindev/queue/captured and core/scheduling/queue/captured under '$(pwd)'. Pass --queue-root PATH or create the queue (mkdir -p .sustaindev/queue/{captured,prework-ready,scheduled,completed})."
+fi
+[ -d "$queue_dir" ] || die 3 "ERROR: queue directory not found: $queue_dir"
 
 today=$(date -u '+%Y-%m-%d')
 captured_at=$(date -u '+%Y-%m-%dT%H:%M:%SZ')

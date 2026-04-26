@@ -4,15 +4,18 @@ set -eu
 usage() {
   cat <<'EOF'
 Usage:
-  scripts/schedule/list-queue.sh [--status captured|prework-ready|scheduled|completed] [--priority low|medium|high] [--json]
-  scripts/schedule/list-queue.sh --help
+  list-queue.sh [--status STATUS] [--priority PRIORITY] [--json] [--queue-root PATH]
+  list-queue.sh --help
 
 Options:
-  --status VALUE     Show one queue status.
-  --priority VALUE   Show one priority.
-  --json             Emit a JSON array.
+  --status VALUE     Show one queue status: captured, prework-ready, scheduled, completed.
+  --priority VALUE   Show one priority: low, medium, high.
+  --json             Emit a JSON array instead of a table.
+  --queue-root PATH  Override queue root. Default: auto-detect by trying
+                     .sustaindev/queue then core/scheduling/queue in the
+                     current working directory.
 
-Exit codes: 0 queue listed, 2 invalid arguments.
+Exit codes: 0 queue listed, 2 invalid arguments, 3 no queue root found.
 EOF
 }
 
@@ -23,6 +26,7 @@ die() {
 status_filter=""
 priority_filter=""
 json=0
+queue_root_arg=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --help|-h) usage; exit 0 ;;
@@ -31,6 +35,8 @@ while [ "$#" -gt 0 ]; do
     --status=*) status_filter=${1#--status=}; shift ;;
     --priority) [ "$#" -ge 2 ] || die 2 "ERROR: --priority requires a value."; priority_filter="$2"; shift 2 ;;
     --priority=*) priority_filter=${1#--priority=}; shift ;;
+    --queue-root) [ "$#" -ge 2 ] || die 2 "ERROR: --queue-root requires a path."; queue_root_arg="$2"; shift 2 ;;
+    --queue-root=*) queue_root_arg=${1#--queue-root=}; shift ;;
     *) die 2 "ERROR: unknown argument: $1" ;;
   esac
 done
@@ -38,7 +44,17 @@ done
 case "$status_filter" in ""|captured|prework-ready|scheduled|completed) ;; *) die 2 "ERROR: invalid status." ;; esac
 case "$priority_filter" in ""|low|medium|high) ;; *) die 2 "ERROR: invalid priority." ;; esac
 
-queue_root="core/scheduling/queue"
+# Resolve queue root: explicit override, or auto-detect.
+if [ -n "$queue_root_arg" ]; then
+  queue_root="$queue_root_arg"
+elif [ -d ".sustaindev/queue" ]; then
+  queue_root=".sustaindev/queue"
+elif [ -d "core/scheduling/queue" ]; then
+  queue_root="core/scheduling/queue"
+else
+  die 3 "ERROR: no queue root found. Tried .sustaindev/queue and core/scheduling/queue under '$(pwd)'. Pass --queue-root PATH."
+fi
+[ -d "$queue_root" ] || die 3 "ERROR: queue root not found: $queue_root"
 statuses="captured prework-ready scheduled completed"
 json_count=0
 yaml_value() {

@@ -21,7 +21,7 @@ Activate this skill when the user has a new idea they want to preserve but do no
 ## Workflow
 
 1. Capture the idea by running `scripts/schedule/capture-idea.sh "<short title>"` — this writes a stub file to `core/scheduling/queue/captured/` with a generated id, the raw idea text, a timestamp, and the execution-window preference.
-2. Run `scripts/schedule/prepare-task.sh <id>` — this reads the captured stub plus the project context and codemap and produces a structured task brief. The prepare step can run on a local model or a cloud model; see "Execution Tier Choice" below for the routing decision.
+2. Run `python3 scripts/schedule/prepare-task.py <id>` — this reads the captured stub plus the project layer files (`PROJECT_CONTEXT.md`, `CODEMAP.md`, `AI_POLICY.md`, `MAINTAINABILITY_NOTES.md`, `VERIFY.md`) and calls a local LM Studio model to produce a structured task brief in `core/scheduling/queue/prework-ready/`. See "Execution Tier Choice" below and `scripts/schedule/README.md` for full options.
 3. Triage the prepared brief: open it in `core/scheduling/queue/captured/` and review the scope, file targets, verify commands, and maintainability constraints. Edit the brief if any field is wrong, missing, or overly broad — a brief that is wrong at preparation time will produce a wrong diff at execution time.
 4. Move the reviewed brief to `core/scheduling/queue/scheduled/` and set the `execution_window` field to match the user's preference.
 5. At the scheduled time, hand the brief to the chosen cloud tool (Codex, Claude Code, or equivalent) for execution; the brief contains everything the tool needs to act without follow-up questions.
