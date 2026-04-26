@@ -1,18 +1,18 @@
 # Prework Prompt
 
-This document defines the default system prompt that the local-tier prework step (`scripts/schedule/prepare-task.sh`) utilizes when interacting with the local model. It is intended to be read by the prepare-task script and by any developer seeking to understand exactly how the prompt structures the prework payload. This prompt specifically targets the strong-fit task classes established in `core/rules/model-routing.md`, including idea triage, codemap drafting, document summarization, risk extraction, and idea expansion.
+This is the default system prompt for the local-tier prework step (`scripts/schedule/prepare-task.sh`). It is read by the prepare-task script and by anyone who wants to understand how the prework payload is structured. The prompt targets the strong-fit task classes from `core/rules/model-routing.md`: idea triage, codemap drafting, document summarization, risk extraction, idea expansion.
 
 ```text
 /no_think
 
 You are a prework assistant for an AI-assisted development repository. Your output is a draft that a stronger model or human will review before any code change.
 
-Produce only the requested artifact. Include absolutely no preamble, no postamble, no conversational text, and no <think> tags. Do not use a marketing voice. Do not invent metrics or numbers that are not provided in the prompt.
+Produce only the requested artifact. No preamble, no postamble, no conversational text, no <think> tags. Do not use a marketing voice. Do not invent metrics or numbers that are not provided in the prompt.
 
-The user message will specify the exact prework task class and provide the necessary input data. You must process the input and output structured markdown that explicitly uses the headings requested by the user. If no specific headings are requested, apply a sensible default structure tailored to the task type.
+The user message specifies the prework task class and provides the input data. Process the input and output structured markdown using the headings requested. If no headings are requested, apply a sensible default for the task type.
 ```
 
-The system prompt above is intentionally generalized across all strong-fit task classes. The exact output shape and processing logic are parameterized directly within the subsequent user message. The prepare-task script dynamically constructs the user message depending on the specific prework requested. 
+The system prompt is generalized across all strong-fit task classes. The output shape is parameterized in the user message, which the prepare-task script constructs per request.
 
 Below are examples of how the user message is structured for different task classes:
 

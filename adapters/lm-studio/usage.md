@@ -2,58 +2,58 @@
 
 ## Purpose
 
-This adapter provides a reliable local-prework execution tier for development workflows. It routes specific, structured tasks to a local model running via LM Studio to conserve cloud tokens. It does not replace the cloud tier; instead, it serves as a specialized engine for tasks where wall-clock latency is acceptable and reasoning overhead is minimal. 
+This adapter provides the local-prework execution tier. It routes structured tasks to a local model running in LM Studio to reduce cloud token use. It does not replace the cloud tier; it handles tasks where wall-clock latency is acceptable and the output will be reviewed before any commit.
 
 ## Prerequisites
 
-- LM Studio installed on your host machine.
-- Supported hardware capabilities.
-- The specifically recommended model downloaded and loaded.
+- LM Studio installed.
+- Supported hardware (see Recommended Model below).
+- The recommended model downloaded and loaded.
 
 ## Recommended Model
 
-The primary target is **Qwen 3.5 9B at MLX 4-bit quantization**, tailored for Apple Silicon at 16–24 GB of unified memory. Note that MLX quantization runs approximately 15–30% faster than GGUF on Apple Silicon and uses roughly 10% less memory, making it the superior format for this hardware class. Qwen 2.5 Coder 7B serves as a highly capable fallback for older Apple Silicon hardware (like the M1 with 8 GB of memory) or non-MLX setups. Codestral 22B stands as an excellent alternative for users equipped with discrete GPUs or 64GB+ unified memory.
+Lead choice: **Qwen 3.5 9B at MLX 4-bit quantization**, for Apple Silicon at 16–24 GB unified memory. MLX runs ~15–30% faster than GGUF on Apple Silicon and uses ~10% less memory, so prefer it on Mac hardware. Qwen 2.5 Coder 7B is a fallback for older Apple Silicon (M1 at 8 GB) or non-MLX setups. Codestral 22B is an alternative for users with discrete GPUs or 64 GB+ unified memory.
 
 ## Setup
 
-1. Download LM Studio directly from `https://lmstudio.ai`.
-2. In LM Studio, search the catalog for and download the `qwen/qwen3.5-9b` MLX 4-bit variant.
-3. Open the *Developer* tab within the LM Studio interface and enable the local server (which defaults to port 1234).
-4. Confirm the server is reachable by running: `curl http://127.0.0.1:1234/v1/models`.
+1. Download LM Studio from `https://lmstudio.ai`.
+2. In LM Studio, search for and download the `qwen/qwen3.5-9b` MLX 4-bit variant.
+3. Open the *Developer* tab and enable the local server (default port 1234).
+4. Confirm the server is reachable: `curl http://127.0.0.1:1234/v1/models`.
 
 ## Configuration
 
-For reliable prework results, configure the local model appropriately. Set the temperature to 0.3 for a more deterministic, structured output. Set the context length to a generous but realistic value based on your hardware; while the Qwen model supports up to 262k natively, setting the context in LM Studio to a value like 32k is comfortable for 16GB systems without causing memory swapping. For Qwen 3.x models, always include the `/no_think` directive in the system prompt to explicitly suppress reasoning overhead on tasks that categorically do not benefit from chain-of-thought generation.
+Set the temperature to 0.3 for more deterministic output. Set the context length to a value comfortable for your hardware; the Qwen model supports up to 262k natively, but 32k is a comfortable cap for 16 GB systems without memory swapping. For Qwen 3.x models, include `/no_think` in the system prompt to suppress reasoning overhead on tasks that don't benefit from chain-of-thought.
 
 ## What This Adapter Is Good For
 
-- **Idea triage and classification:** The output is tiny, inference is extremely fast, and the cloud token savings become real at scale.
-- **Codemap drafts from file lists:** The model effectively extracts patterns and benefits immensely from large context windows.
-- **Summarization of long documents:** The task strictly bounds the output while taking full advantage of the 262k context window.
-- **Risk extraction from existing prose:** The task relies heavily on pattern-matching where structure matters far more than nuanced prose quality.
-- **Idea expansion:** Transforming a rough capture into a structured task brief works perfectly when latency is acceptable because the user has already stepped away.
-- **Batch or overnight prework:** The wall-clock cost is functionally zero because execution happens asynchronously.
+- **Idea triage and classification.** Output is tiny, inference is fast, cloud savings compound at scale.
+- **Codemap drafts from file lists.** Pattern extraction; the large context window helps.
+- **Summarization of long documents.** Output is bounded, the 262k context window pays off.
+- **Risk extraction from existing prose.** Pattern-matching task; structure matters more than prose quality.
+- **Idea expansion.** Turning a rough capture into a structured task brief works when the user has stepped away.
+- **Batch or overnight prework.** Wall-clock cost is effectively zero when execution is asynchronous.
 
 ## What This Adapter Is Not Good For
 
-- **Full-document drafting:** The reasoning overhead and severe wall-clock cost vastly outweigh any marginal cloud token savings.
-- **Adapter templates:** Generating tool-specific adapters requires accurate technical knowledge that 9B class models frequently hallucinate or get entirely wrong.
-- **Cross-document consistency checks:** The sheer wall-clock penalty is far too high for interactive, active development sessions.
-- **Time-critical authoring:** When the user is actively waiting on the output, the accumulated latency is completely unacceptable. 
+- **Full-document drafting.** Reasoning overhead and wall-clock cost outweigh the cloud token savings.
+- **Adapter templates.** Tool-specific knowledge that 9B-class models often get wrong.
+- **Cross-document consistency checks.** Wall-clock penalty too high for active sessions.
+- **Time-critical authoring.** When the user is waiting, the latency is unacceptable.
 
-For empirical backing of these limitations, refer to the measurements detailed in `docs/measurement/case-study-01.md`.
+Empirical backing for these limitations: `docs/measurement/case-study-01.md`.
 
 ## Integration with the Hero Workflow
 
-The `idea-to-prepared-task` skill (`core/skills/idea-to-prepared-task/SKILL.md`) natively utilizes this adapter for the preparation step whenever the user explicitly opts in. The adapter remains strictly optional; users who prefer a purely cloud-only execution environment can skip the local tier entirely without breaking the hero workflow.
+The `idea-to-prepared-task` skill (`core/skills/idea-to-prepared-task/SKILL.md`) uses this adapter for the preparation step when the user opts in. The adapter is optional; cloud-only setups skip the local tier without breaking the hero workflow.
 
 ## Honest Limitations
 
-Local-model quality varies significantly depending on the exact hardware running the inference. Token counts measured between LM Studio and cloud APIs utilize fundamentally different tokenizers and absolutely do not compare apples-to-apples. The reasoning-mode behavior built into Qwen 3.x models can consume significant portions of the token budget; utilizing the `/no_think` directive helps significantly but does not fully eliminate the underlying generation overhead. The 215-second wall-clock duration measured precisely in case-study-01 is highly realistic for this specific hardware tier on a roughly 500-word document generation task. Your actual mileage will naturally vary based heavily on task complexity, prompt structure, and system load.
+Local-model quality varies with hardware. Token counts between LM Studio and cloud APIs use different tokenizers and don't compare apples-to-apples. Reasoning-mode behavior in Qwen 3.x can consume a large share of the token budget; `/no_think` helps but does not fully eliminate it. The 215-second wall-clock measured in case-study-01 is realistic for this hardware tier on a ~500-word document. Your mileage varies with task complexity, prompt structure, and system load.
 
 ## Troubleshooting
 
-- **Connection refused:** Ensure you have fully enabled the local server inside LM Studio's Developer tab.
-- **Model not found:** Verify that the loaded model id string matches exactly `qwen/qwen3.5-9b` in your script parameters.
-- **Empty output:** Ensure the `/no_think` directive is correctly placed in the system prompt or raise your `max_tokens` limit substantially to accommodate hidden reasoning output.
-- **Slow inference:** Switch your model file directly from GGUF to MLX quantization, which handles memory far more efficiently on Apple Silicon.
+- **Connection refused:** enable the local server in LM Studio's Developer tab.
+- **Model not found:** verify the loaded model id matches `qwen/qwen3.5-9b` in your script.
+- **Empty output:** ensure `/no_think` is in the system prompt, or raise `max_tokens` to accommodate hidden reasoning output.
+- **Slow inference:** switch from GGUF to MLX quantization on Apple Silicon.
