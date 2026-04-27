@@ -25,6 +25,21 @@ By default the script asks `git status --porcelain=v1` for the list of modified
 and untracked files. Pass a file path with --files-from to use a hand-curated
 list instead.
 
+Common options:
+    --files-from PATH       Hand-curated list (one path per line) instead of git status.
+    --max-files N           Cap files sent. Default 0 = auto-scale against context.
+    --lm-studio-context N   Loaded model's context length in tokens (default 16384).
+    --sample-rate FLOAT     Mark ~this fraction of rows for human spot-check (0.0-1.0).
+    --dry-run               Print the prompt that would be sent and exit.
+    --model ID              Override loaded model id.
+    --temperature FLOAT     Default 0.2.
+    --max-tokens N          Default 4000.
+
+Output:
+    The bucket counts in the output are POST-PROCESSED — the script parses its
+    own response and replaces the model's counts line with verified counts.
+    Don't trust the model's arithmetic; trust the script's recomputation.
+
 Local-only by design. Outputs:
 
     <project-root>/.sustaindev/measurement/triage-<timestamp>.md
@@ -58,7 +73,14 @@ DEFAULT_TIMEOUT = 600
 PROJECT_LAYER_FILES = [
     "PROJECT_CONTEXT.md",
     "CODEMAP.md",
+    "RISKS.md",
+    "MAINTAINABILITY_NOTES.md",
 ]
+# Note (v0.1.3): RISKS.md and MAINTAINABILITY_NOTES.md added based on
+# case-study-04 finding #6 — without them the model defaults to confident
+# commit-now classification and never flags risky files for review-first.
+# AI_POLICY.md and DECISIONS.md are intentionally still excluded; they tend
+# to be longer and less directly useful for triage-shaped decisions.
 
 SYSTEM_PROMPT = """\
 /no_think
@@ -95,9 +117,21 @@ Output rules — follow exactly:
 5. Do not produce any other content. No preamble, no postamble, no <think>
    tags, no introduction, no closing summary beyond the counts line.
 
-If the project context (provided in the user message) gives information that
-helps classify, use it. If a file is ambiguous, prefer review-first over
-guessing.
+Specific rules that apply to particular file patterns:
+
+- `.gitkeep` files are ALWAYS commit-now. They exist specifically to track
+  otherwise-empty directories in git.
+- Directory listings (paths ending in `/`) should be classified by likely
+  contents, not by directory name alone. A `runtime-state/` directory might
+  be build-artifact; a `runtime-state/` containing only a tracked `.gitkeep`
+  is commit-now for the directory marker (the runtime contents themselves are
+  separate concerns handled by .gitignore, not by this triage).
+- If the project context lists a file under "hot spots", "stable anchors", or
+  any "Hoog ernst" / "high severity" risk in RISKS.md, classify it as
+  review-first regardless of how active or modified it appears. Hot-spot
+  status implies "needs human eyes before commit."
+- If a file is ambiguous and the project context gives no clear signal, prefer
+  review-first over guessing.
 """
 
 
@@ -195,6 +229,83 @@ def call_lm_studio(
     return {}
 
 
+VALID_BUCKETS = ("commit-now", "review-first", "archive", "build-artifact")
+
+
+def recompute_counts(table_text: str) -> tuple[str, dict, list[str]]:
+    """Parse the model's output table and recompute the counts line.
+
+    Returns (rewritten_text, counts_dict, anomalies). The model's reported
+    counts line (if any) is removed from the body and replaced with a verified
+    one. Anomalies lists any rows that didn't have a recognized bucket.
+    """
+    lines = table_text.splitlines()
+    counts = {b: 0 for b in VALID_BUCKETS}
+    anomalies: list[str] = []
+    table_rows = 0
+    body_lines: list[str] = []
+    counts_line_pattern = re.compile(r"^Counts:\s*", re.IGNORECASE)
+    for line in lines:
+        # Drop any model-emitted counts line; we'll append our own.
+        if counts_line_pattern.match(line.strip()):
+            continue
+        body_lines.append(line)
+        # Parse table rows (skip header/separator).
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 3:
+            continue
+        bucket = cells[1]
+        # Skip the header row and the separator row.
+        if bucket == "Bucket" or set(bucket) <= set("- "):
+            continue
+        table_rows += 1
+        if bucket in counts:
+            counts[bucket] += 1
+        else:
+            anomalies.append(f"unrecognized bucket '{bucket}' on row: {cells[0]}")
+    total = sum(counts.values())
+    counts_line = (
+        f"Counts (verified by post-processing): "
+        f"commit-now={counts['commit-now']}, "
+        f"review-first={counts['review-first']}, "
+        f"archive={counts['archive']}, "
+        f"build-artifact={counts['build-artifact']} "
+        f"(total={total}; rows seen={table_rows})"
+    )
+    rewritten = "\n".join(body_lines).rstrip() + "\n\n" + counts_line + "\n"
+    return rewritten, {**counts, "total": total, "table_rows": table_rows}, anomalies
+
+
+def annotate_sample(table_text: str, sample_rate: float, seed: int = 0) -> str:
+    """Mark a random subset of rows for human spot-check attention.
+
+    Adds a leading 🔍 (or text marker if no unicode) to ~sample_rate fraction
+    of rows. The marker shows up in the File column and signals "this row was
+    randomly sampled; double-check it." Closes case-study-04 finding #10.
+    """
+    if sample_rate <= 0:
+        return table_text
+    import random
+
+    rng = random.Random(seed)
+    out_lines: list[str] = []
+    for line in table_text.splitlines():
+        if (
+            line.startswith("|")
+            and not line.startswith("| File")
+            and not set(line.strip().strip("|")) <= set("- |")
+        ):
+            cells = line.strip().strip("|").split("|")
+            if len(cells) >= 3 and rng.random() < sample_rate:
+                # Mark the file cell.
+                cells[0] = " [SAMPLED] " + cells[0].lstrip()
+                line = "| " + " | ".join(c.strip() for c in cells) + " |"
+        out_lines.append(line)
+    return "\n".join(out_lines)
+
+
 def extract_content(response: dict) -> tuple[str, str]:
     try:
         message = response["choices"][0]["message"]
@@ -219,9 +330,22 @@ def parse_args() -> argparse.Namespace:
                         help="Path to a text file with one file path per line. "
                              "If omitted, the script runs `git status --porcelain` "
                              "in the project root.")
-    parser.add_argument("--max-files", type=int, default=80,
-                        help="Cap the number of files sent in one batch. Default 80; "
-                             "above this, send in chunks.")
+    parser.add_argument("--max-files", type=int, default=0,
+                        help="Cap the number of files sent in one batch. Default 0 = "
+                             "auto-scale against --lm-studio-context: roughly one file "
+                             "per 100 tokens of available context after reserving room for "
+                             "system prompt, project layer, and the output. Pass an integer "
+                             "to override.")
+    parser.add_argument("--lm-studio-context", type=int,
+                        default=int(os.environ.get("LM_STUDIO_CONTEXT", "16384")),
+                        help="The loaded LM Studio model's context length in tokens. "
+                             "Used only for --max-files auto-scaling. Default 16384 "
+                             "(or $LM_STUDIO_CONTEXT). Doesn't change the model's actual "
+                             "context — set that in LM Studio.")
+    parser.add_argument("--sample-rate", type=float, default=0.0,
+                        help="Mark approximately this fraction of rows with [SAMPLED] for "
+                             "human spot-check attention. Range 0.0-1.0. Default 0 = off. "
+                             "Recommended: 0.10 (~10%) for unfamiliar projects.")
     parser.add_argument("--lm-studio-url", default=os.environ.get("LM_STUDIO_URL", DEFAULT_LM_STUDIO_URL))
     parser.add_argument("--model", default=os.environ.get("LM_STUDIO_MODEL", DEFAULT_MODEL))
     parser.add_argument("--temperature", type=float, default=DEFAULT_TEMPERATURE)
@@ -252,13 +376,31 @@ def main() -> int:
     if not files:
         fail("No files to triage. Pass --files-from or have something in `git status`.")
 
-    if len(files) > args.max_files:
+    # Resolve max_files: explicit override, or auto-scale against context.
+    if args.max_files > 0:
+        max_files = args.max_files
+    else:
+        # Heuristic: reserve ~3,500 tokens for system prompt + project layer (with
+        # RISKS.md and MAINTAINABILITY_NOTES added, this can grow); reserve
+        # `max_tokens` for output; treat each file as ~80 input tokens (path +
+        # rationale roundtrip). What's left is the per-file budget.
+        reserved = 3500 + args.max_tokens
+        budget = max(args.lm_studio_context - reserved, 4000)
+        max_files = max(20, budget // 80)
+        print(
+            f"Auto-scaled --max-files to {max_files} (context={args.lm_studio_context}, "
+            f"reserved={reserved}, budget={budget} tokens / 80 tokens/file).",
+            file=sys.stderr,
+        )
+
+    if len(files) > max_files:
         warn(
-            f"File count ({len(files)}) exceeds --max-files ({args.max_files}); "
-            f"truncating to first {args.max_files}. Re-run with --max-files higher "
+            f"File count ({len(files)}) exceeds max_files ({max_files}); "
+            f"truncating to first {max_files}. Re-run with --max-files higher, "
+            f"--lm-studio-context higher (must match the loaded model's actual context), "
             f"or run in chunks if you want full coverage."
         )
-        files = files[: args.max_files]
+        files = files[: max_files]
 
     # Gather optional context.
     context_blocks: list[str] = []
@@ -314,16 +456,25 @@ def main() -> int:
         args.temperature, args.max_tokens, args.timeout,
     )
     elapsed = time.perf_counter() - t0
-    output, reasoning = extract_content(response)
+    raw_output, reasoning = extract_content(response)
+
+    # Post-process: recompute counts (model arithmetic is unreliable per
+    # case-study-04 finding #7) and optionally mark a sample for spot-check.
+    output, verified_counts, anomalies = recompute_counts(raw_output)
+    if args.sample_rate > 0:
+        output = annotate_sample(output, args.sample_rate)
+    for anomaly in anomalies:
+        warn(f"Output anomaly: {anomaly}")
 
     usage = response.get("usage", {}) or {}
     out_md.write_text(
         f"# Triage Output ({utc_iso()})\n\n"
         f"Project root: `{project_root}`\n"
-        f"File count: {len(files)}\n"
+        f"File count (input): {len(files)}\n"
         f"Model: `{args.model}`\n"
         f"Wall-clock: {elapsed:.1f}s\n"
-        f"Total tokens: {usage.get('total_tokens', 'n/a')}\n\n"
+        f"Total tokens: {usage.get('total_tokens', 'n/a')}\n"
+        f"Sample rate: {args.sample_rate}\n\n"
         f"---\n\n"
         f"{output}\n",
         encoding="utf-8",
@@ -341,6 +492,11 @@ def main() -> int:
                 "total_tokens": usage.get("total_tokens"),
                 "reasoning_chars": len(reasoning),
                 "output_chars": len(output),
+                "verified_counts": verified_counts,
+                "output_anomalies": anomalies,
+                "sample_rate": args.sample_rate,
+                "lm_studio_context": args.lm_studio_context,
+                "max_files_resolved": max_files,
                 "output_md_path": str(out_md),
                 "timestamp_utc": utc_iso(),
             },

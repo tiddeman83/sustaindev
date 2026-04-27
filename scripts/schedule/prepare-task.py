@@ -358,6 +358,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-tokens", type=int, default=int(os.environ.get("LM_STUDIO_MAX_TOKENS", DEFAULT_MAX_TOKENS)))
     parser.add_argument("--timeout", type=int, default=int(os.environ.get("LM_STUDIO_TIMEOUT", DEFAULT_TIMEOUT)))
     parser.add_argument("--measurement-dir", default=None)
+    parser.add_argument("--lm-studio-context", type=int,
+                        default=int(os.environ.get("LM_STUDIO_CONTEXT", "16384")),
+                        help="Loaded model context length in tokens, used for the "
+                             "pre-flight prompt-size check. Default 16384 (or "
+                             "$LM_STUDIO_CONTEXT). Doesn't change LM Studio's actual "
+                             "context.")
+    parser.add_argument("--exclude-file", action="append", default=[],
+                        help="Skip a project layer file by name (e.g. "
+                             "--exclude-file MAINTAINABILITY_NOTES.md). Repeatable. "
+                             "Useful for graceful degradation when context is small.")
+    parser.add_argument("--force", action="store_true",
+                        help="Skip the pre-flight prompt-size check and call LM "
+                             "Studio anyway. Useful when you've raised LM Studio's "
+                             "context but $LM_STUDIO_CONTEXT/--lm-studio-context "
+                             "doesn't reflect that.")
     parser.add_argument("-h", "--help", action="store_true")
     args = parser.parse_args()
     if args.help or args.captured_id is None:
@@ -382,9 +397,14 @@ def main() -> int:
     if output_path.exists() and not args.dry_run:
         fail(f"Output already exists: {output_path}. Move or delete it first.")
 
-    # Gather project context.
+    # Gather project context, honoring --exclude-file.
+    excluded = set(args.exclude_file or [])
+    if excluded:
+        print(f"Excluding from context: {sorted(excluded)}", file=sys.stderr)
     context_blocks: list[str] = []
     for filename in PROJECT_LAYER_FILES:
+        if filename in excluded:
+            continue
         text = read_optional(project_root / filename, filename)
         if text is not None:
             context_blocks.append(f"### {filename}\n\n{text.strip()}")
@@ -433,7 +453,44 @@ def main() -> int:
         print(f"Output would land at: {output_path}")
         return 0
 
-    print(f"Calling LM Studio ({args.model}) for captured id '{captured_id}'...", file=sys.stderr)
+    # Pre-flight prompt-size check (case-study-03 finding #1).
+    # Rough heuristic: ~4 chars per token for English, ~3.5 for mixed-language
+    # markdown. Use 3.8 as a conservative middle. Reserve room for max_tokens
+    # (output) plus ~512 tokens of overhead (response framing, tokenizer
+    # boundaries, reasoning leakage).
+    prompt_chars = len(SYSTEM_PROMPT) + len(user_message)
+    estimated_prompt_tokens = int(prompt_chars / 3.8)
+    estimated_total_context_needed = estimated_prompt_tokens + args.max_tokens + 512
+    threshold = args.lm_studio_context
+    if estimated_total_context_needed >= threshold and not args.force:
+        fail(
+            f"Pre-flight check: estimated context need ({estimated_total_context_needed} "
+            f"tokens) exceeds --lm-studio-context ({threshold}).\n"
+            f"  Prompt:        ~{estimated_prompt_tokens} tokens ({prompt_chars} chars)\n"
+            f"  Output budget: {args.max_tokens} tokens (--max-tokens)\n"
+            f"  Overhead:      ~512 tokens reserved for response framing\n"
+            f"\n"
+            f"Options:\n"
+            f"  - Raise LM Studio's context length and pass --lm-studio-context to match\n"
+            f"    (16384 typical for project layers; 32768 for very large ones).\n"
+            f"  - Drop one or more project layer files: --exclude-file MAINTAINABILITY_NOTES.md\n"
+            f"  - Lower --max-tokens (default 4000) if you expect a shorter brief.\n"
+            f"  - Pass --force to skip this check and call anyway (you'll see the actual\n"
+            f"    server response if the model rejects it).",
+            code=6,
+        )
+    elif estimated_total_context_needed >= threshold * 0.85:
+        warn(
+            f"Pre-flight: estimated context need ({estimated_total_context_needed} "
+            f"tokens) is within 15% of --lm-studio-context ({threshold}). "
+            f"Proceeding, but consider raising context or excluding a layer file."
+        )
+
+    print(
+        f"Calling LM Studio ({args.model}) for captured id '{captured_id}'... "
+        f"(prompt ~{estimated_prompt_tokens} tokens)",
+        file=sys.stderr,
+    )
     t0 = time.perf_counter()
     response = call_lm_studio(
         args.lm_studio_url,
