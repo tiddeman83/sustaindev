@@ -1,0 +1,27 @@
+---
+name: SustainDev — List queue
+description: |
+  Print a summary of all queued tasks across captured / prework-ready /
+  scheduled / completed. Optionally filter by status or priority.
+command: |-
+  ~/sustaindev/scripts/schedule/list-queue.sh {{status_flag}} {{priority_flag}} {{json_flag}}
+arguments:
+  - name: status_flag
+    description: |
+      Filter to a single status. Examples: --status captured | --status scheduled.
+      Leave blank to show all four queues.
+    default_value: ""
+  - name: priority_flag
+    description: |
+      Filter to a single priority. Examples: --priority high | --priority low.
+      Leave blank to show all priorities.
+    default_value: ""
+  - name: json_flag
+    description: |
+      Pass --json to emit a JSON array instead of a table.
+      Leave blank for the table format.
+    default_value: ""
+tags:
+  - sustaindev
+  - schedule
+shells: [bash, zsh]

@@ -1,0 +1,28 @@
+---
+name: SustainDev — Prepare task (local model)
+description: |
+  Run prepare-task.py against a captured stub. Calls LM Studio (default
+  port 1234) and uses the project layer files in the current working
+  directory to draft a structured task brief. Output lands in
+  prework-ready/. See docs/measurement/case-study-03.md for what to
+  expect from this workflow.
+command: |-
+  python3 ~/sustaindev/scripts/schedule/prepare-task.py "{{captured_id}}" {{extra_flags}}
+arguments:
+  - name: captured_id
+    description: |
+      The id from the captured stub file (the basename without .md).
+      Run "List queue" first if you don't remember it.
+  - name: extra_flags
+    description: |
+      Optional overrides. Common ones:
+      --max-tokens 6000   (raise the output budget)
+      --exclude-file MAINTAINABILITY_NOTES.md   (drop a layer file for context budget)
+      --dry-run   (print prompt and exit; doesn't call LM Studio)
+      --lm-studio-context 32768   (matches LM Studio if you've raised it)
+    default_value: ""
+tags:
+  - sustaindev
+  - schedule
+  - lm-studio
+shells: [bash, zsh]

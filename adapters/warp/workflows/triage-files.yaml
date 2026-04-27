@@ -1,0 +1,24 @@
+---
+name: SustainDev — Triage files (local model)
+description: |
+  Classify modified-and-untracked files in the current repo into
+  commit-now / review-first / archive / build-artifact buckets via
+  the local model. Reads PROJECT_CONTEXT, CODEMAP, RISKS,
+  MAINTAINABILITY_NOTES, VERIFY when present. Output + verified
+  counts land in .sustaindev/measurement/.
+command: |-
+  python3 ~/sustaindev/scripts/sprint1/triage-files.py {{extra_flags}}
+arguments:
+  - name: extra_flags
+    description: |
+      Optional overrides. Common ones:
+      --sample-rate 0.1   (mark ~10% of rows for human spot-check)
+      --max-files 200   (override auto-scaling)
+      --files-from list.txt   (custom file list instead of git status)
+      --dry-run   (print prompt and exit)
+    default_value: ""
+tags:
+  - sustaindev
+  - probe
+  - lm-studio
+shells: [bash, zsh]

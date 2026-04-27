@@ -83,9 +83,11 @@ Token cost. Dollar cost. Environmental footprint. Accessibility for developers w
 
 ## Status
 
-**v0.1.x line: complete.** Eight tagged releases (v0.1.0 → v0.1.7), seven measurement case studies, six of ten matrix rows empirically backed. Two unconditional strong-fit rows, three conditional, one weak. Probe scripts ship with shared post-processing utilities. The synthesis doc at [`docs/measurement/v0.1.x-lessons.md`](docs/measurement/v0.1.x-lessons.md) is the entry-point read.
+**v0.1.x line: complete.** Nine tagged releases (v0.1.0 → v0.1.8), seven measurement case studies, six of ten matrix rows empirically backed. Two unconditional strong-fit rows, three conditional, one weak. Probe scripts ship with shared post-processing utilities. Adopter walkthrough + FAQ at [`docs/adoption/`](docs/adoption/) and synthesis at [`docs/measurement/v0.1.x-lessons.md`](docs/measurement/v0.1.x-lessons.md) are the entry-point reads.
 
-- v0.2 — Warp, VS Code, Cursor / Cline rules export adapters; remaining four matrix rows; test suite for `scripts/lib/postprocess.py`.
+**v0.2.0-alpha** — first v0.2-line release: [`adapters/warp/`](adapters/warp/) ships four Warp Workflows (capture-idea, list-queue, prepare-task, triage-files) so the SustainDev probes are one keypress away from anywhere in your terminal. Install with `./adapters/warp/install.sh`.
+
+- v0.2 — VS Code adapter, Cursor / Cline rules export adapters; remaining four matrix rows; test suite for `scripts/lib/postprocess.py`.
 - v0.3+ — agents, commands, project adoption examples, Antigravity adapter.
 
 Public roadmap: [`docs/roadmap.md`](docs/roadmap.md).

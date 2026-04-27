@@ -1,0 +1,21 @@
+---
+name: SustainDev — Capture idea
+description: |
+  Capture a rough idea into the SustainDev queue under
+  .sustaindev/queue/captured/ (or core/scheduling/queue/captured/ if
+  the project uses that root). Auto-detects which queue root is in use.
+command: |-
+  ~/sustaindev/scripts/schedule/capture-idea.sh --priority {{priority}} "{{title}}"
+arguments:
+  - name: priority
+    description: |
+      One of low | medium | high. Default medium.
+    default_value: medium
+  - name: title
+    description: |
+      Short title for the captured idea. Will be slugified into the
+      file id. Keep under ~50 chars; longer titles get truncated.
+tags:
+  - sustaindev
+  - schedule
+shells: [bash, zsh]
