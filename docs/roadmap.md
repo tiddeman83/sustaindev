@@ -18,10 +18,9 @@ This roadmap is intentionally short. Each version aims to be small enough to und
 
 ## v0.2 — Adapters Expansion
 
-- ✅ **Warp adapter** (shipped in v0.2.0-alpha) — four Warp Workflows for capture-idea, list-queue, prepare-task, triage-files. Install via `./adapters/warp/install.sh`.
-- VS Code adapter (MCP config + tasks.json template) — pending.
-- Cursor rules export adapter — pending.
-- Cline rules export adapter — pending.
+- ✅ **Warp adapter** (shipped in v0.2.0-alpha) — four Warp Workflows for capture-idea, list-queue, prepare-task, triage-files.
+- ✅ **VS Code adapter** (shipped in v0.2.0-beta) — six VS Code Tasks (all probes). Works for Cursor and Cline too via shared `.vscode/tasks.json`.
+- Cursor / Cline rules export adapter (native rules format, not just tasks.json) — pending.
 - Additional MCP policy templates (GitHub, Linear, browser, docs, database) — pending.
 - Second measurement case study from an outside contributor (target) — pending.
 

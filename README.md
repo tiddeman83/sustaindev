@@ -85,9 +85,12 @@ Token cost. Dollar cost. Environmental footprint. Accessibility for developers w
 
 **v0.1.x line: complete.** Nine tagged releases (v0.1.0 → v0.1.8), seven measurement case studies, six of ten matrix rows empirically backed. Two unconditional strong-fit rows, three conditional, one weak. Probe scripts ship with shared post-processing utilities. Adopter walkthrough + FAQ at [`docs/adoption/`](docs/adoption/) and synthesis at [`docs/measurement/v0.1.x-lessons.md`](docs/measurement/v0.1.x-lessons.md) are the entry-point reads.
 
-**v0.2.0-alpha** — first v0.2-line release: [`adapters/warp/`](adapters/warp/) ships four Warp Workflows (capture-idea, list-queue, prepare-task, triage-files) so the SustainDev probes are one keypress away from anywhere in your terminal. Install with `./adapters/warp/install.sh`.
+**v0.2.0-beta** — second v0.2-line release. Two adapters now ship:
 
-- v0.2 — VS Code adapter, Cursor / Cline rules export adapters; remaining four matrix rows; test suite for `scripts/lib/postprocess.py`.
+- [`adapters/warp/`](adapters/warp/) — four Warp Workflows (capture-idea, list-queue, prepare-task, triage-files) one keypress away via Cmd+Shift+R. Install: `./adapters/warp/install.sh`.
+- [`adapters/vscode/`](adapters/vscode/) — six VS Code Tasks covering all SustainDev probes (capture-idea, list-queue, prepare-task, triage-files, draft-catalog, extract-risks). Cmd+Shift+P → Tasks: Run Task. Install: `~/sustaindev/adapters/vscode/install.sh` from your project root. Cursor and Cline both read tasks.json so this adapter works for them too.
+
+- v0.2 — Cursor / Cline rules export adapters; remaining four matrix rows; test suite for `scripts/lib/postprocess.py`.
 - v0.3+ — agents, commands, project adoption examples, Antigravity adapter.
 
 Public roadmap: [`docs/roadmap.md`](docs/roadmap.md).

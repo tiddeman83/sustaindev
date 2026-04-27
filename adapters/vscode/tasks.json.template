@@ -1,0 +1,174 @@
+{
+  "version": "2.0.0",
+  "//": "SustainDev VS Code adapter — see adapters/vscode/README.md in your SustainDev checkout for details.",
+  "tasks": [
+    {
+      "label": "SustainDev — Capture idea",
+      "type": "shell",
+      "command": "${input:sustaindevHome}/scripts/schedule/capture-idea.sh",
+      "args": [
+        "--priority",
+        "${input:priority}",
+        "${input:captureTitle}"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "SustainDev — List queue",
+      "type": "shell",
+      "command": "${input:sustaindevHome}/scripts/schedule/list-queue.sh",
+      "args": [
+        "${input:listExtraFlags}"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "SustainDev — Prepare task (local model)",
+      "type": "shell",
+      "command": "python3",
+      "args": [
+        "${input:sustaindevHome}/scripts/schedule/prepare-task.py",
+        "${input:capturedId}",
+        "${input:prepareExtraFlags}"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "SustainDev — Triage files (local model)",
+      "type": "shell",
+      "command": "python3",
+      "args": [
+        "${input:sustaindevHome}/scripts/sprint1/triage-files.py",
+        "${input:triageExtraFlags}"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "SustainDev — Draft service catalog (local model)",
+      "type": "shell",
+      "command": "python3",
+      "args": [
+        "${input:sustaindevHome}/scripts/sprint1/draft-catalog.py",
+        "${input:catalogExtraFlags}"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "SustainDev — Extract risks (local model)",
+      "type": "shell",
+      "command": "python3",
+      "args": [
+        "${input:sustaindevHome}/scripts/sprint1/extract-risks.py",
+        "${input:risksDocPath}",
+        "--severity-scale",
+        "${input:risksSeverityScale}"
+      ],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "sustaindevHome",
+      "type": "promptString",
+      "description": "Path to your SustainDev checkout. Override the default if it lives elsewhere.",
+      "default": "${env:HOME}/sustaindev"
+    },
+    {
+      "id": "priority",
+      "type": "pickString",
+      "description": "Priority for the captured idea",
+      "options": ["low", "medium", "high"],
+      "default": "medium"
+    },
+    {
+      "id": "captureTitle",
+      "type": "promptString",
+      "description": "Short title for the captured idea (will be slugified)"
+    },
+    {
+      "id": "listExtraFlags",
+      "type": "promptString",
+      "description": "Optional flags for list-queue.sh (e.g. --status captured --priority high). Leave empty for all.",
+      "default": ""
+    },
+    {
+      "id": "capturedId",
+      "type": "promptString",
+      "description": "Captured stub id (basename of the file without .md). Run List queue first if unsure."
+    },
+    {
+      "id": "prepareExtraFlags",
+      "type": "promptString",
+      "description": "Optional flags for prepare-task.py (e.g. --max-tokens 6000, --exclude-file MAINTAINABILITY_NOTES.md, --dry-run).",
+      "default": ""
+    },
+    {
+      "id": "triageExtraFlags",
+      "type": "promptString",
+      "description": "Optional flags for triage-files.py (e.g. --sample-rate 0.1, --max-files 200, --dry-run).",
+      "default": ""
+    },
+    {
+      "id": "catalogExtraFlags",
+      "type": "promptString",
+      "description": "Optional flags for draft-catalog.py (e.g. --services-root src/, --interface-glob '*Service*.cs', --max-tokens 8000).",
+      "default": ""
+    },
+    {
+      "id": "risksDocPath",
+      "type": "promptString",
+      "description": "Path to the document to extract risks from (relative to your project root)",
+      "default": "docs/known-issues.md"
+    },
+    {
+      "id": "risksSeverityScale",
+      "type": "pickString",
+      "description": "Severity scale to use when classifying risks",
+      "options": [
+        "high,medium,low,info",
+        "hoog,middel,laag,info",
+        "critical,high,medium,low,info",
+        "blocker,major,minor,trivial,info"
+      ],
+      "default": "high,medium,low,info"
+    }
+  ]
+}
