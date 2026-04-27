@@ -53,6 +53,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+# Shared post-processing utilities (v0.1.6+).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
+from postprocess import (
+    dedupe_section_headers,
+    detect_planning_prose,
+    extract_after_planning,
+)
+
 
 DEFAULT_LM_STUDIO_URL = "http://127.0.0.1:1234/v1/chat/completions"
 DEFAULT_MODEL = "qwen/qwen3.5-9b"
@@ -329,8 +337,24 @@ def main() -> int:
     response = call_lm_studio(args.lm_studio_url, args.model, SYSTEM_PROMPT, user_message,
                               args.temperature, args.max_tokens, args.timeout)
     elapsed = time.perf_counter() - t0
-    output, reasoning = extract_content(response)
+    raw_output, reasoning = extract_content(response)
     usage = response.get("usage", {}) or {}
+
+    # Post-process: strip leaked planning preamble (case-study-05 Run 1
+    # failure mode) and dedupe service entries (case-study-05 finding:
+    # one service appeared twice).
+    output = raw_output
+    postprocess_notes: list[str] = []
+    if detect_planning_prose(output):
+        output = extract_after_planning(output, anchor_pattern=r"^# ")
+        postprocess_notes.append("stripped planning preamble before first H1")
+    output, removed_dupes = dedupe_section_headers(output)
+    if removed_dupes:
+        postprocess_notes.append(
+            f"removed {len(removed_dupes)} duplicate section(s): {removed_dupes}"
+        )
+    for note in postprocess_notes:
+        print(f"Post-process: {note}", file=sys.stderr)
 
     out_md.write_text(
         f"# Catalog Draft Output ({utc_iso()})\n\n"
@@ -360,6 +384,8 @@ def main() -> int:
             "reasoning_chars": len(reasoning),
             "output_chars": len(output),
             "lm_studio_context": args.lm_studio_context,
+            "postprocess_notes": postprocess_notes,
+            "removed_duplicates": removed_dupes,
             "output_md_path": str(out_md),
             "timestamp_utc": utc_iso(),
         }, indent=2) + "\n",

@@ -51,6 +51,14 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Shared post-processing utilities (v0.1.6+).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
+from postprocess import (
+    detect_planning_prose,
+    extract_after_planning,
+    extract_last_draft,
+)
+
 
 DEFAULT_LM_STUDIO_URL = "http://127.0.0.1:1234/v1/chat/completions"
 DEFAULT_MODEL = "qwen/qwen3.5-9b"
@@ -255,8 +263,42 @@ def main() -> int:
     response = call_lm_studio(args.lm_studio_url, args.model, system_prompt, user_message,
                               args.temperature, args.max_tokens, args.timeout)
     elapsed = time.perf_counter() - t0
-    output, reasoning = extract_content(response)
+    raw_output, reasoning = extract_content(response)
     usage = response.get("usage", {}) or {}
+
+    # Post-process: handle three failure modes from case-study-06.
+    # (1) Reasoning leaked into visible output (16k context, tight cap).
+    # (2) Visible content empty, reasoning_content used as fallback (32k context).
+    # (3) Multiple drafts produced inside the output during the model's
+    #     reasoning phase. Extract the LAST one.
+    output = raw_output
+    postprocess_notes: list[str] = []
+
+    # Detect fallback condition: extract_content returns the same string for
+    # both `output` and `reasoning` when content was empty and reasoning was
+    # used as the fallback.
+    fallback_used = raw_output == reasoning and len(reasoning) > 0
+    if fallback_used:
+        postprocess_notes.append(
+            "visible content was empty; using reasoning_content as fallback"
+        )
+
+    if fallback_used or detect_planning_prose(output):
+        last_draft = extract_last_draft(output, anchor_pattern=r"^#")
+        if last_draft and last_draft != output:
+            postprocess_notes.append(
+                f"extracted last draft from {len(output)}-char reasoning text "
+                f"(now {len(last_draft)} chars)"
+            )
+            output = last_draft
+        elif detect_planning_prose(output):
+            stripped = extract_after_planning(output, anchor_pattern=r"^#")
+            if stripped != output:
+                postprocess_notes.append("stripped planning preamble before first H1")
+                output = stripped
+
+    for note in postprocess_notes:
+        print(f"Post-process: {note}", file=sys.stderr)
 
     output_words = len(output.split())
     out_md.write_text(
@@ -292,6 +334,8 @@ def main() -> int:
             "reasoning_chars": len(reasoning),
             "output_chars": len(output),
             "lm_studio_context": args.lm_studio_context,
+            "postprocess_notes": postprocess_notes,
+            "fallback_used": fallback_used,
             "output_md_path": str(out_md),
             "timestamp_utc": utc_iso(),
         }, indent=2) + "\n",

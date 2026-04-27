@@ -63,6 +63,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+# Shared post-processing utilities (v0.1.6+).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
+from postprocess import (
+    annotate_sample_rows,
+    recompute_table_counts,
+    strip_think_tags,
+)
+
 
 DEFAULT_LM_STUDIO_URL = "http://127.0.0.1:1234/v1/chat/completions"
 DEFAULT_MODEL = "qwen/qwen3.5-9b"
@@ -232,80 +240,6 @@ def call_lm_studio(
 VALID_BUCKETS = ("commit-now", "review-first", "archive", "build-artifact")
 
 
-def recompute_counts(table_text: str) -> tuple[str, dict, list[str]]:
-    """Parse the model's output table and recompute the counts line.
-
-    Returns (rewritten_text, counts_dict, anomalies). The model's reported
-    counts line (if any) is removed from the body and replaced with a verified
-    one. Anomalies lists any rows that didn't have a recognized bucket.
-    """
-    lines = table_text.splitlines()
-    counts = {b: 0 for b in VALID_BUCKETS}
-    anomalies: list[str] = []
-    table_rows = 0
-    body_lines: list[str] = []
-    counts_line_pattern = re.compile(r"^Counts:\s*", re.IGNORECASE)
-    for line in lines:
-        # Drop any model-emitted counts line; we'll append our own.
-        if counts_line_pattern.match(line.strip()):
-            continue
-        body_lines.append(line)
-        # Parse table rows (skip header/separator).
-        if not line.startswith("|"):
-            continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) < 3:
-            continue
-        bucket = cells[1]
-        # Skip the header row and the separator row.
-        if bucket == "Bucket" or set(bucket) <= set("- "):
-            continue
-        table_rows += 1
-        if bucket in counts:
-            counts[bucket] += 1
-        else:
-            anomalies.append(f"unrecognized bucket '{bucket}' on row: {cells[0]}")
-    total = sum(counts.values())
-    counts_line = (
-        f"Counts (verified by post-processing): "
-        f"commit-now={counts['commit-now']}, "
-        f"review-first={counts['review-first']}, "
-        f"archive={counts['archive']}, "
-        f"build-artifact={counts['build-artifact']} "
-        f"(total={total}; rows seen={table_rows})"
-    )
-    rewritten = "\n".join(body_lines).rstrip() + "\n\n" + counts_line + "\n"
-    return rewritten, {**counts, "total": total, "table_rows": table_rows}, anomalies
-
-
-def annotate_sample(table_text: str, sample_rate: float, seed: int = 0) -> str:
-    """Mark a random subset of rows for human spot-check attention.
-
-    Adds a leading 🔍 (or text marker if no unicode) to ~sample_rate fraction
-    of rows. The marker shows up in the File column and signals "this row was
-    randomly sampled; double-check it." Closes case-study-04 finding #10.
-    """
-    if sample_rate <= 0:
-        return table_text
-    import random
-
-    rng = random.Random(seed)
-    out_lines: list[str] = []
-    for line in table_text.splitlines():
-        if (
-            line.startswith("|")
-            and not line.startswith("| File")
-            and not set(line.strip().strip("|")) <= set("- |")
-        ):
-            cells = line.strip().strip("|").split("|")
-            if len(cells) >= 3 and rng.random() < sample_rate:
-                # Mark the file cell.
-                cells[0] = " [SAMPLED] " + cells[0].lstrip()
-                line = "| " + " | ".join(c.strip() for c in cells) + " |"
-        out_lines.append(line)
-    return "\n".join(out_lines)
-
-
 def extract_content(response: dict) -> tuple[str, str]:
     try:
         message = response["choices"][0]["message"]
@@ -460,9 +394,13 @@ def main() -> int:
 
     # Post-process: recompute counts (model arithmetic is unreliable per
     # case-study-04 finding #7) and optionally mark a sample for spot-check.
-    output, verified_counts, anomalies = recompute_counts(raw_output)
+    output, verified_counts, anomalies = recompute_table_counts(
+        raw_output,
+        bucket_column_index=1,
+        valid_buckets=VALID_BUCKETS,
+    )
     if args.sample_rate > 0:
-        output = annotate_sample(output, args.sample_rate)
+        output = annotate_sample_rows(output, args.sample_rate)
     for anomaly in anomalies:
         warn(f"Output anomaly: {anomaly}")
 
