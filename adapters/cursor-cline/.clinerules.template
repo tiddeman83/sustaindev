@@ -1,0 +1,113 @@
+<!--
+SustainDev Cline adapter template.
+
+Target tool: Cline (https://cline.bot) — the VS Code AI coding extension
+        formerly known as Claude Dev.
+Format: .clinerules — a single markdown file at the project root that
+        Cline prepends to every AI prompt in this workspace.
+
+Install:
+  cp adapters/cursor-cline/.clinerules.template <project>/.clinerules
+  Then replace <placeholder> values for your project.
+
+Cline also supports a .clinerules/ directory layout where each file in
+the folder becomes a separate rule. If you prefer it, drop this file
+in as .clinerules/sustaindev.md (no YAML frontmatter required).
+
+Referenced core files (read these before acting):
+  - core/principles/development-principles.md
+  - core/rules/token-efficiency.md
+  - core/rules/maintainability.md
+  - core/rules/model-routing.md
+  - core/skills/idea-to-prepared-task/SKILL.md
+-->
+
+# <project-name> — Cline Rules
+
+<One-line description of what this project is and who uses it.>
+
+<One paragraph expanding on the project's purpose, the problem it solves,
+and any constraints that are not obvious from the name alone. Keep it to
+three to five sentences.>
+
+## Read Before Acting
+
+These files are the minimum context for acting correctly in this project.
+Read them in order. They are tool-neutral; the same files are used by
+Codex, Claude Code, Cursor, LM Studio, and any other adapter.
+
+- `core/principles/development-principles.md` — development principles that apply to all projects.
+- `core/rules/token-efficiency.md` — token discipline rules; apply them to every model turn.
+- `core/rules/maintainability.md` — the six maintainability dimensions; required for every code change.
+- `core/rules/model-routing.md` — routing decisions between local and cloud model tiers.
+- `PROJECT_CONTEXT.md` — compact, durable context for this project specifically.
+- `CODEMAP.md` — file and module map; use it to locate code before scanning the repo.
+- `VERIFY.md` — verification commands; run these after every change.
+
+If `PROJECT_CONTEXT.md`, `CODEMAP.md`, or `VERIFY.md` do not yet exist in
+this project, create them first using the templates in
+`core/templates/` from your SustainDev checkout. Do not start coding
+in a project that lacks the project layer — the token-efficiency
+guarantees depend on it.
+
+## Token Efficiency (Cline-specific notes)
+
+Cline auto-includes open files and recent file tree changes. Keep
+unrelated files closed during a focused task. Use `@file` and
+`@folder` mentions in your message to bring specific files in;
+prefer `CODEMAP.md` references over broad repository scans.
+
+For large or vague tasks, capture them with SustainDev's
+`capture-idea.sh` and prepare them with `prepare-task.py` (local
+model) before asking Cline to execute. The local-tier prework
+prevents 30k-token cloud-model warmups on context a 9B model can
+produce for free.
+
+If you use Cline's "Plan" mode, the prepared brief is the plan —
+hand it directly to Cline rather than asking Cline to re-derive it.
+
+## Verification Commands
+
+Verification commands are in `VERIFY.md`. Run the full sequence after
+every code change before reporting the task complete. Cline's "execute
+command" approval gate should reference these commands, not improvise.
+If a verification command is missing or stale, update `VERIFY.md` as
+part of the change.
+
+## AI Policy
+
+Actions permitted and restricted for AI tools working in this project
+are in `AI_POLICY.md`. Read it before taking any action that writes
+files, runs commands, or calls external services. The policy is
+tool-neutral — it binds Cline the same as any other adapter.
+
+Cline's auto-approve settings should not exceed the boundaries set in
+`AI_POLICY.md`. If `AI_POLICY.md` says destructive commands require
+human review, do not auto-approve them in Cline regardless of
+convenience.
+
+## Maintainability Constraints
+
+Project-specific maintainability rules that extend the core six
+dimensions are in `MAINTAINABILITY_NOTES.md`. The six dimensions in
+`core/rules/maintainability.md` (architecture fit, coupling, naming,
+testability, error handling, change cost) still apply unchanged;
+`MAINTAINABILITY_NOTES.md` adds project-specific constraints on top.
+
+Every code change must justify its impact on each of the six
+dimensions, even if briefly. "No impact" is a valid answer; silence
+is not.
+
+## Skills Available
+
+- `core/skills/idea-to-prepared-task/SKILL.md` — captures a vague idea
+  and produces a structured task brief queued for execution. The hero
+  workflow for v0.1; use it whenever a request is larger than a few
+  lines or touches files Cline has not seen this session.
+
+## Decisions and Risks
+
+- `DECISIONS.md` records architectural decisions with rationale.
+  Check before proposing something that has already been considered.
+- `RISKS.md` lists active risks and their mitigations. Read before
+  changing code near a known risk area.

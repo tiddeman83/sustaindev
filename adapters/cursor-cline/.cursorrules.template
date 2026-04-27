@@ -1,0 +1,111 @@
+<!--
+SustainDev Cursor adapter template.
+
+Target tool: Cursor (https://cursor.com)
+Format: .cursorrules — a single markdown file at the project root that Cursor
+        prepends to every AI prompt for this workspace.
+
+Install:
+  cp adapters/cursor-cline/.cursorrules.template <project>/.cursorrules
+  Then replace <placeholder> values for your project.
+
+Cursor also supports a newer .cursor/rules/*.mdc layout. If you prefer it,
+copy this file to .cursor/rules/sustaindev.mdc and add YAML frontmatter:
+
+  ---
+  description: SustainDev development principles and project layer
+  globs: ["**/*"]
+  alwaysApply: true
+  ---
+
+Both formats accept the same body content below.
+
+Referenced core files (read these before acting):
+  - core/principles/development-principles.md
+  - core/rules/token-efficiency.md
+  - core/rules/maintainability.md
+  - core/rules/model-routing.md
+  - core/skills/idea-to-prepared-task/SKILL.md
+-->
+
+# <project-name> — Cursor Rules
+
+<One-line description of what this project is and who uses it.>
+
+<One paragraph expanding on the project's purpose, the problem it solves,
+and any constraints that are not obvious from the name alone. Keep it to
+three to five sentences.>
+
+## Read Before Acting
+
+These files are the minimum context for acting correctly in this project.
+Read them in order. They are tool-neutral; the same files are used by
+Codex, Claude Code, LM Studio, and any other adapter.
+
+- `core/principles/development-principles.md` — development principles that apply to all projects.
+- `core/rules/token-efficiency.md` — token discipline rules; apply them to every model turn.
+- `core/rules/maintainability.md` — the six maintainability dimensions; required for every code change.
+- `core/rules/model-routing.md` — routing decisions between local and cloud model tiers.
+- `PROJECT_CONTEXT.md` — compact, durable context for this project specifically.
+- `CODEMAP.md` — file and module map; use it to locate code before scanning the repo.
+- `VERIFY.md` — verification commands; run these after every change.
+
+If `PROJECT_CONTEXT.md`, `CODEMAP.md`, or `VERIFY.md` do not yet exist in
+this project, create them first using the templates in
+`core/templates/` from your SustainDev checkout. Do not start coding
+in a project that lacks the project layer — the token-efficiency
+guarantees depend on it.
+
+## Token Efficiency (Cursor-specific notes)
+
+Cursor's @-references (`@file`, `@folder`, `@docs`) are the cheapest way
+to bring context into a turn. Prefer them over copy-paste and over broad
+"explore the repo" prompts. Reference `CODEMAP.md` first; only widen
+scope when CODEMAP plus the named file is insufficient.
+
+When a task is large or vague, do **not** ask Cursor to plan and execute
+in one turn. Capture the idea using SustainDev's `capture-idea.sh`,
+prepare it with `prepare-task.py` (local model), then hand the prepared
+brief back to Cursor for execution. The local-tier prework prevents
+30k-token cloud-model warmups on context the local model can produce
+for free.
+
+## Verification Commands
+
+Verification commands are in `VERIFY.md`. Run the full sequence after
+every code change before reporting the task complete. If a verification
+command is missing or stale, update `VERIFY.md` as part of the change.
+
+## AI Policy
+
+Actions permitted and restricted for AI tools working in this project
+are in `AI_POLICY.md`. Read it before taking any action that writes
+files, runs commands, or calls external services. Cursor's Agent mode
+is bound by this policy the same as any other tool — the file is
+tool-neutral by design.
+
+## Maintainability Constraints
+
+Project-specific maintainability rules that extend the core six
+dimensions are in `MAINTAINABILITY_NOTES.md`. The six dimensions in
+`core/rules/maintainability.md` (architecture fit, coupling, naming,
+testability, error handling, change cost) still apply unchanged;
+`MAINTAINABILITY_NOTES.md` adds project-specific constraints on top.
+
+Every code change must justify its impact on each of the six
+dimensions, even if briefly. "No impact" is a valid answer; silence
+is not.
+
+## Skills Available
+
+- `core/skills/idea-to-prepared-task/SKILL.md` — captures a vague idea
+  and produces a structured task brief queued for execution. The hero
+  workflow for v0.1; use it whenever a request is larger than a few
+  lines or touches files Cursor has not seen this session.
+
+## Decisions and Risks
+
+- `DECISIONS.md` records architectural decisions with rationale.
+  Check before proposing something that has already been considered.
+- `RISKS.md` lists active risks and their mitigations. Read before
+  changing code near a known risk area.

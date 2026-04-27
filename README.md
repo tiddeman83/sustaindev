@@ -85,12 +85,13 @@ Token cost. Dollar cost. Environmental footprint. Accessibility for developers w
 
 **v0.1.x line: complete.** Nine tagged releases (v0.1.0 → v0.1.8), seven measurement case studies, six of ten matrix rows empirically backed. Two unconditional strong-fit rows, three conditional, one weak. Probe scripts ship with shared post-processing utilities. Adopter walkthrough + FAQ at [`docs/adoption/`](docs/adoption/) and synthesis at [`docs/measurement/v0.1.x-lessons.md`](docs/measurement/v0.1.x-lessons.md) are the entry-point reads.
 
-**v0.2.0-beta** — second v0.2-line release. Two adapters now ship:
+**v0.2.0** — final v0.2-line release. Three adapters now ship:
 
 - [`adapters/warp/`](adapters/warp/) — four Warp Workflows (capture-idea, list-queue, prepare-task, triage-files) one keypress away via Cmd+Shift+R. Install: `./adapters/warp/install.sh`.
-- [`adapters/vscode/`](adapters/vscode/) — six VS Code Tasks covering all SustainDev probes (capture-idea, list-queue, prepare-task, triage-files, draft-catalog, extract-risks). Cmd+Shift+P → Tasks: Run Task. Install: `~/sustaindev/adapters/vscode/install.sh` from your project root. Cursor and Cline both read tasks.json so this adapter works for them too.
+- [`adapters/vscode/`](adapters/vscode/) — six VS Code Tasks covering all SustainDev probes (capture-idea, list-queue, prepare-task, triage-files, draft-catalog, extract-risks). Cmd+Shift+P → Tasks: Run Task. Install: `~/sustaindev/adapters/vscode/install.sh` from your project root. Cursor and Cline both read tasks.json, so this adapter works for them too.
+- [`adapters/cursor-cline/`](adapters/cursor-cline/) — `.cursorrules` and `.clinerules` templates that point at SustainDev `core/` content rather than restating it. One install script, two formats, `--cursor` / `--cline` flags for selective install. Refuses to overwrite existing rules files. Install: `~/sustaindev/adapters/cursor-cline/install.sh` from your project root.
 
-- v0.2 — Cursor / Cline rules export adapters; remaining four matrix rows; test suite for `scripts/lib/postprocess.py`.
+- v0.2 backlog — additional MCP policy templates; remaining four matrix rows; test suite for `scripts/lib/postprocess.py`.
 - v0.3+ — agents, commands, project adoption examples, Antigravity adapter.
 
 Public roadmap: [`docs/roadmap.md`](docs/roadmap.md).

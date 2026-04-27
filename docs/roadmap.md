@@ -20,9 +20,10 @@ This roadmap is intentionally short. Each version aims to be small enough to und
 
 - ✅ **Warp adapter** (shipped in v0.2.0-alpha) — four Warp Workflows for capture-idea, list-queue, prepare-task, triage-files.
 - ✅ **VS Code adapter** (shipped in v0.2.0-beta) — six VS Code Tasks (all probes). Works for Cursor and Cline too via shared `.vscode/tasks.json`.
-- Cursor / Cline rules export adapter (native rules format, not just tasks.json) — pending.
+- ✅ **Cursor / Cline rules-export adapter** (shipped in v0.2.0) — `.cursorrules` and `.clinerules` templates that point at SustainDev `core/` content rather than restating it. One install script, two formats, `--cursor`/`--cline` flags for selective install.
 - Additional MCP policy templates (GitHub, Linear, browser, docs, database) — pending.
 - Second measurement case study from an outside contributor (target) — pending.
+- Test suite for `scripts/lib/postprocess.py` — pending.
 
 ## v0.3 — More Skills
 
