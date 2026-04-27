@@ -4,7 +4,7 @@ A Warp Workflows package for the SustainDev scheduling scripts. Lets you run `ca
 
 ## What this is
 
-[Warp Workflows](https://docs.warp.dev/features/warp-workflows) are YAML-defined parameterized commands. Once installed, you trigger them from Warp via Cmd+Shift+R (the Workflow palette) or by typing the workflow name.
+[Warp Workflows](https://docs.warp.dev/knowledge-and-collaboration/warp-drive/workflows) are parameterized commands you save in Warp with descriptions and arguments. SustainDev ships them as [YAML workflow files](https://docs.warp.dev/terminal/entry/yaml-workflows), which Warp still supports alongside the newer Warp Drive workflows. Once installed, you trigger them from Warp via Cmd+Shift+R (the Workflow palette) or by typing the workflow name.
 
 This adapter ships four workflows that wrap SustainDev's scheduling and probe scripts. Each workflow prompts for the arguments it needs and runs the underlying script with your inputs.
 
