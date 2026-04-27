@@ -41,18 +41,28 @@ See [`docs/positioning.md`](docs/positioning.md) for a fair, specific comparison
 
 ## Quickstart
 
+**Start here:** [`docs/adoption/getting-started.md`](docs/adoption/getting-started.md) — your first 30 minutes from clone to first probe output.
+
+For background before you start: [`docs/measurement/v0.1.x-lessons.md`](docs/measurement/v0.1.x-lessons.md) — what we learned in 7 case studies, summarized.
+
+Common questions: [`docs/adoption/faq.md`](docs/adoption/faq.md).
+
+Bare-minimum incantation:
+
 ```bash
 git clone https://github.com/<username>/sustaindev.git
 cd sustaindev
 
 # Read the philosophy
-cat core/principles/development-principles.md  # ships in Sprint 1
+cat core/principles/development-principles.md
+cat core/rules/token-efficiency.md
 
-# Try the hero workflow (Sprint 1)
-./scripts/schedule/capture-idea.sh "your first idea here"
+# Try a probe on your own project (after LM Studio setup — see getting-started.md)
+cd /path/to/your/project
+python3 ~/sustaindev/scripts/sprint1/triage-files.py
 ```
 
-Full setup including LM Studio configuration is in [`adapters/lm-studio/usage.md`](adapters/lm-studio/usage.md) (shipping in Sprint 1).
+Full LM Studio setup is in [`adapters/lm-studio/usage.md`](adapters/lm-studio/usage.md). The getting-started doc walks you through everything in order.
 
 ## Repository Layout
 
@@ -73,8 +83,9 @@ Token cost. Dollar cost. Environmental footprint. Accessibility for developers w
 
 ## Status
 
-- v0.1 (current sprint) — repository foundation + hero workflow + first measurement case study.
-- v0.2 — Warp, VS Code adapters; more skills.
+**v0.1.x line: complete.** Eight tagged releases (v0.1.0 → v0.1.7), seven measurement case studies, six of ten matrix rows empirically backed. Two unconditional strong-fit rows, three conditional, one weak. Probe scripts ship with shared post-processing utilities. The synthesis doc at [`docs/measurement/v0.1.x-lessons.md`](docs/measurement/v0.1.x-lessons.md) is the entry-point read.
+
+- v0.2 — Warp, VS Code, Cursor / Cline rules export adapters; remaining four matrix rows; test suite for `scripts/lib/postprocess.py`.
 - v0.3+ — agents, commands, project adoption examples, Antigravity adapter.
 
 Public roadmap: [`docs/roadmap.md`](docs/roadmap.md).
